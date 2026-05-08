@@ -38,7 +38,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <div className="p-6 border-b border-slate-800">
                     <Link to="/" className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
                         <LayoutDashboard className="text-indigo-400" />
-                        PlanGenius
+                        LlegoYA
                     </Link>
                 </div>
 
