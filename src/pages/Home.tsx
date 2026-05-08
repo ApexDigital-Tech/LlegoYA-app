@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, MapPin, Lightbulb } from 'lucide-react';
@@ -6,7 +6,7 @@ import { useAppStore } from '../lib/store';
 
 export const Home = () => {
     const navigate = useNavigate();
-    const { initProject, isLoading, user } = useAppStore();
+    const { initProject, user } = useAppStore();
     const [idea, setIdea] = useState('');
     const [loc, setLoc] = useState('');
 
