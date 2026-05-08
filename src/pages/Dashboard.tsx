@@ -5,79 +5,76 @@ import { CheckCircle2, Circle, ArrowRight, Loader2, Home as HomeIcon } from 'luc
 import { useAppStore } from '../lib/store';
 
 export const Dashboard = () => {
+    const { projectId } = useParams();
     const navigate = useNavigate();
-    const { projectId: urlProjectId } = useParams();
-    const { steps, businessIdea, location, loadProject, isLoading, projectId } = useAppStore();
+    const { steps, fetchProject, isLoading, businessIdea } = useAppStore();
 
     useEffect(() => {
-        if (urlProjectId && urlProjectId !== projectId) {
-            loadProject(urlProjectId);
+        if (projectId) {
+            fetchProject(projectId);
         }
-    }, [urlProjectId, projectId, loadProject]);
+    }, [projectId, fetchProject]);
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <Loader2 size={48} className="animate-spin text-indigo-500 mb-4" />
-                <p className="text-xl">Cargando tu plan de negocio...</p>
-            </div>
-        );
-    }
-
-    if (!projectId && !urlProjectId) {
-        return (
-            <div className="text-center py-20">
-                <HomeIcon size={48} className="mx-auto mb-4 text-slate-600" />
-                <h2 className="text-2xl font-bold mb-4">No se encontró el proyecto</h2>
-                <button onClick={() => navigate('/')} className="px-6 py-2 bg-indigo-600 rounded-lg">
-                    Volver al inicio
-                </button>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Loader2 className="animate-spin text-indigo-500" size={40} />
+                <p className="text-slate-400 animate-pulse">Cargando tu plan...</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
             <header className="mb-12">
-                <h1 className="text-3xl font-bold mb-2">Your Business Roadmap</h1>
-                <p className="text-slate-400">
-                    Transforming <span className="text-indigo-400">"{businessIdea}"</span> in <span className="text-cyan-400">{location}</span> into reality.
+                <div className="flex items-center gap-2 text-indigo-400 text-sm font-bold uppercase tracking-wider mb-2">
+                    <HomeIcon size={16} />
+                    <span>Panel de Control</span>
+                </div>
+                <h1 className="text-4xl font-black mb-4">{businessIdea || 'Tu Plan de Negocios'}</h1>
+                <p className="text-slate-400 text-lg leading-relaxed">
+                    Hemos dividido tu estrategia en pasos clave. Completa cada sección para generar tu plan final.
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
                 {steps.map((step, index) => (
                     <motion.div
                         key={step.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
                         onClick={() => navigate(`/step/${step.id}`)}
-                        className={`
-              relative p-6 rounded-2xl border cursor-pointer group transition-all
-              ${step.status === 'completed'
-                                ? 'bg-slate-900/50 border-indigo-500/30 hover:border-indigo-500/60'
-                                : 'bg-slate-900/30 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'}
-            `}
+                        className="group relative flex items-center justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl cursor-pointer hover:border-indigo-500/50 transition-all overflow-hidden"
                     >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={`
-                p-3 rounded-xl 
-                ${step.status === 'completed' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-400'}
-              `}>
-                                {step.status === 'completed' ? <CheckCircle2 size={24} /> :
-                                    step.status === 'generating' ? <Loader2 size={24} className="animate-spin" /> :
-                                        <Circle size={24} />}
+                        <div className="flex items-center gap-6">
+                            <div className="relative z-10">
+                                {step.status === 'completed' ? (
+                                    <div className="bg-green-500/20 p-2 rounded-full text-green-400">
+                                        <CheckCircle2 size={24} />
+                                    </div>
+                                ) : step.status === 'generating' ? (
+                                    <div className="bg-indigo-500/20 p-2 rounded-full text-indigo-400">
+                                        <Loader2 className="animate-spin" size={24} />
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-700">
+                                        <Circle size={24} />
+                                    </div>
+                                )}
                             </div>
-                            <span className="text-xs font-mono text-slate-500">STEP {index + 1}</span>
+                            <div>
+                                <h3 className="text-xl font-bold group-hover:text-indigo-300 transition-colors">{step.title}</h3>
+                                <p className="text-slate-500 mt-1">{step.description}</p>
+                            </div>
                         </div>
-
-                        <h3 className="text-xl font-bold mb-2 group-hover:text-indigo-300 transition-colors">{step.title}</h3>
-                        <p className="text-sm text-slate-400 mb-6 line-clamp-2">{step.description}</p>
-
-                        <div className="flex items-center text-sm font-medium text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">
-                            {step.status === 'completed' ? 'View Details' : 'Start Section'} <ArrowRight size={16} className="ml-1" />
-                        </div>
+                        <ArrowRight className="text-slate-700 group-hover:text-indigo-400 group-hover:translate-x-2 transition-all" />
+                        
+                        {/* Progress Bar Background */}
+                        <div className="absolute bottom-0 left-0 h-1 bg-indigo-500/10 w-full" />
+                        {step.status === 'completed' && (
+                            <div className="absolute bottom-0 left-0 h-1 bg-green-500 w-full" />
+                        )}
                     </motion.div>
                 ))}
             </div>

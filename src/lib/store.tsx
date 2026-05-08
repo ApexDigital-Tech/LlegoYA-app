@@ -27,12 +27,48 @@ interface AppState {
 }
 
 const defaultSteps: Step[] = [
-    { id: 'executive-summary', title: 'Executive Summary', description: 'Overview of your business.', status: 'pending' },
-    { id: 'market-research', title: 'Market Research', description: 'Analysis of market trends and competitors.', status: 'pending' },
-    { id: 'target-audience', title: 'Target Audience', description: 'Define your buyer persona.', status: 'pending' },
-    { id: 'marketing-plan', title: 'Marketing Plan', description: 'Strategies to reach your customers.', status: 'pending' },
-    { id: 'financial-plan', title: 'Financial Plan', description: 'Revenue projections and costs.', status: 'pending' },
-    { id: 'brand-kit', title: 'Brand Identity', description: 'Logo, colors, and visual style.', status: 'pending' },
+    {
+        id: '1',
+        title: 'Resumen Ejecutivo',
+        description: 'Una visión general de alto nivel de tu negocio, objetivos y por qué tendrás éxito.',
+        status: 'pending',
+        content: ''
+    },
+    {
+        id: '2',
+        title: 'Análisis de Mercado',
+        description: 'Investigación sobre tu industria, público objetivo y panorama competitivo.',
+        status: 'pending',
+        content: ''
+    },
+    {
+        id: '3',
+        title: 'Estrategia de Marketing',
+        description: 'Cómo planeas atraer y retener clientes, y tu estrategia de precios.',
+        status: 'pending',
+        content: ''
+    },
+    {
+        id: '4',
+        title: 'Plan Operativo',
+        description: 'La logística de tu negocio, desde la producción hasta la entrega y el equipo.',
+        status: 'pending',
+        content: ''
+    },
+    {
+        id: '5',
+        title: 'Identidad de Marca',
+        description: 'Definición de tus valores de marca, voz y guía visual para tu negocio.',
+        status: 'pending',
+        content: ''
+    },
+    {
+        id: '6',
+        title: 'Plan Financiero',
+        description: 'Proyecciones de ingresos, gastos y punto de equilibrio.',
+        status: 'pending',
+        content: ''
+    }
 ];
 
 const AppContext = createContext<AppState | undefined>(undefined);
