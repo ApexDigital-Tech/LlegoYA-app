@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 
 export type StepStatus = 'pending' | 'generating' | 'completed';
@@ -24,48 +24,12 @@ interface AppState {
 }
 
 const initialSteps: Step[] = [
-    {
-        id: '1',
-        title: 'Resumen Ejecutivo',
-        description: 'Una visión general de alto nivel de tu negocio, objetivos y por qué tendrás éxito.',
-        status: 'pending',
-        content: ''
-    },
-    {
-        id: '2',
-        title: 'Análisis de Mercado',
-        description: 'Investigación sobre tu industria, público objetivo y panorama competitivo.',
-        status: 'pending',
-        content: ''
-    },
-    {
-        id: '3',
-        title: 'Estrategia de Marketing',
-        description: 'Cómo planeas atraer y retener clientes, y tu estrategia de precios.',
-        status: 'pending',
-        content: ''
-    },
-    {
-        id: '4',
-        title: 'Plan Operativo',
-        description: 'La logística de tu negocio, desde la producción hasta la entrega y el equipo.',
-        status: 'pending',
-        content: ''
-    },
-    {
-        id: '5',
-        title: 'Identidad de Marca',
-        description: 'Definición de tus valores de marca, voz y guía visual para tu negocio.',
-        status: 'pending',
-        content: ''
-    },
-    {
-        id: '6',
-        title: 'Plan Financiero',
-        description: 'Proyecciones de ingresos, gastos y punto de equilibrio.',
-        status: 'pending',
-        content: ''
-    }
+    { id: '1', title: 'Resumen Ejecutivo', description: 'Visión general del negocio.', status: 'pending', content: '' },
+    { id: '2', title: 'Análisis de Mercado', description: 'Industria y competencia.', status: 'pending', content: '' },
+    { id: '3', title: 'Estrategia de Marketing', description: 'Atracción de clientes.', status: 'pending', content: '' },
+    { id: '4', title: 'Plan Operativo', description: 'Logística y equipo.', status: 'pending', content: '' },
+    { id: '5', title: 'Identidad de Marca', description: 'Valores y guía visual.', status: 'pending', content: '' },
+    { id: '6', title: 'Plan Financiero', description: 'Proyecciones de ingresos.', status: 'pending', content: '' }
 ];
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -89,7 +53,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const initProject = async (idea: string, loc: string) => {
+    const initProject = useCallback(async (idea: string, loc: string) => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
@@ -121,9 +85,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user]);
 
-    const fetchProject = async (id: string) => {
+    const fetchProject = useCallback(async (id: string) => {
         setIsLoading(true);
         try {
             const { data: project } = await supabase.from('projects').select('*').eq('id', id).single();
@@ -141,9 +105,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    const updateStepStatus = async (stepId: string, status: StepStatus, content?: string) => {
+    const updateStepStatus = useCallback(async (stepId: string, status: StepStatus, content?: string) => {
         try {
             const { error } = await supabase
                 .from('steps')
@@ -156,12 +120,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
             console.error(error);
         }
-    };
+    }, []);
 
-    const signOut = async () => {
+    const signOut = useCallback(async () => {
         await supabase.auth.signOut();
         setUser(null);
-    };
+    }, []);
 
     return (
         <AppContext.Provider value={{ 
