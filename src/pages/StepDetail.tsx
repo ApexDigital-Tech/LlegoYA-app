@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// import { motion } from 'framer-motion';
 import { ArrowLeft, Wand2, Download, RefreshCw } from 'lucide-react';
 import { generateStepContent } from '../lib/gemini';
 import { useAppStore } from '../lib/store';

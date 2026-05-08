@@ -8,25 +8,22 @@ export interface Step {
     title: string;
     description: string;
     status: StepStatus;
-    content?: string; // HTML or Markdown content
-    image?: string; // For brand kit
+    content?: string;
 }
 
 interface AppState {
-    user: any | null;
-    projectId: string | null;
     businessIdea: string;
     location: string;
     steps: Step[];
     isLoading: boolean;
+    user: any;
     initProject: (idea: string, loc: string) => Promise<string | null>;
-    updateStepStatus: (id: string, status: StepStatus) => void;
-    updateStepContent: (id: string, content: string, image?: string) => Promise<void>;
-    loadProject: (id: string) => Promise<void>;
+    fetchProject: (id: string) => Promise<void>;
+    updateStepStatus: (stepId: string, status: StepStatus, content?: string) => Promise<void>;
     signOut: () => Promise<void>;
 }
 
-const defaultSteps: Step[] = [
+const initialSteps: Step[] = [
     {
         id: '1',
         title: 'Resumen Ejecutivo',
@@ -74,15 +71,13 @@ const defaultSteps: Step[] = [
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<any | null>(null);
-    const [projectId, setProjectId] = useState<string | null>(null);
     const [businessIdea, setBusinessIdea] = useState('');
     const [location, setLocation] = useState('');
-    const [steps, setSteps] = useState<Step[]>(defaultSteps);
+    const [steps, setSteps] = useState<Step[]>(initialSteps);
     const [isLoading, setIsLoading] = useState(false);
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        // Escuchar cambios en la sesión
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
         });
@@ -94,121 +89,84 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const signOut = async () => {
-        await supabase.auth.signOut();
-        setProjectId(null);
-        setBusinessIdea('');
-        setLocation('');
-        setSteps(defaultSteps);
-    };
-
     const initProject = async (idea: string, loc: string) => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('projects')
-                .insert([{ 
-                    business_idea: idea, 
-                    location: loc,
-                    user_id: user?.id // Vincular al usuario actual
-                }])
+                .insert([{ business_idea: idea, location: loc, user_id: user?.id }])
                 .select()
                 .single();
 
             if (error) throw error;
 
-            setProjectId(data.id);
             setBusinessIdea(idea);
             setLocation(loc);
+            
+            const projectSteps = initialSteps.map(s => ({
+                project_id: data.id,
+                title: s.title,
+                description: s.description,
+                status: 'pending',
+                content: ''
+            }));
+
+            const { error: stepsError } = await supabase.from('steps').insert(projectSteps);
+            if (stepsError) throw stepsError;
+
             return data.id;
         } catch (error) {
-            console.error('Error creating project:', error);
+            console.error(error);
             return null;
         } finally {
             setIsLoading(false);
         }
     };
 
-    const loadProject = async (id: string) => {
+    const fetchProject = async (id: string) => {
         setIsLoading(true);
         try {
-            const { data: project, error: pError } = await supabase
-                .from('projects')
-                .select('*')
-                .eq('id', id)
-                .single();
+            const { data: project } = await supabase.from('projects').select('*').eq('id', id).single();
+            if (project) {
+                setBusinessIdea(project.business_idea);
+                setLocation(project.location);
+            }
 
-            if (pError) throw pError;
-
-            const { data: dbSteps, error: sError } = await supabase
-                .from('steps')
-                .select('*')
-                .eq('project_id', id);
-
-            if (sError) throw sError;
-
-            setProjectId(project.id);
-            setBusinessIdea(project.business_idea);
-            setLocation(project.location);
-
-            if (dbSteps) {
-                setSteps(prev => prev.map(s => {
-                    const dbStep = dbSteps.find(ds => ds.step_key === s.id);
-                    return dbStep ? {
-                        ...s,
-                        status: dbStep.status as StepStatus,
-                        content: dbStep.content,
-                        image: dbStep.image_url
-                    } : s;
-                }));
+            const { data: projectSteps } = await supabase.from('steps').select('*').eq('project_id', id).order('id');
+            if (projectSteps) {
+                setSteps(projectSteps);
             }
         } catch (error) {
-            console.error('Error loading project:', error);
+            console.error(error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const updateStepStatus = (id: string, status: StepStatus) => {
-        setSteps(prev => prev.map(s => s.id === id ? { ...s, status } : s));
-    };
-
-    const updateStepContent = async (id: string, content: string, image?: string) => {
-        if (!projectId) return;
-
-        // Optimistic update
-        setSteps(prev => prev.map(s => s.id === id ? { ...s, content, image, status: 'completed' } : s));
-
+    const updateStepStatus = async (stepId: string, status: StepStatus, content?: string) => {
         try {
             const { error } = await supabase
                 .from('steps')
-                .upsert({
-                    project_id: projectId,
-                    step_key: id,
-                    status: 'completed',
-                    content,
-                    image_url: image
-                }, { onConflict: 'project_id,step_key' });
+                .update({ status, content })
+                .eq('id', stepId);
 
             if (error) throw error;
+
+            setSteps(prev => prev.map(s => s.id === stepId ? { ...s, status, content: content || s.content } : s));
         } catch (error) {
-            console.error('Error saving step:', error);
+            console.error(error);
         }
     };
 
+    const signOut = async () => {
+        await supabase.auth.signOut();
+        setUser(null);
+    };
+
     return (
-        <AppContext.Provider value={{
-            user,
-            projectId,
-            businessIdea,
-            location,
-            steps,
-            isLoading,
-            initProject,
-            updateStepStatus,
-            updateStepContent,
-            loadProject,
-            signOut
+        <AppContext.Provider value={{ 
+            businessIdea, location, steps, isLoading, user, 
+            initProject, fetchProject, updateStepStatus, signOut 
         }}>
             {children}
         </AppContext.Provider>
@@ -217,6 +175,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAppStore = () => {
     const context = useContext(AppContext);
-    if (!context) throw new Error('useAppStore must be used within an AppProvider');
+    if (!context) throw new Error('useAppStore must be used within AppProvider');
     return context;
 };
